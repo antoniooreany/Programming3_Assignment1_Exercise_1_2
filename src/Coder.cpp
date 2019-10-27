@@ -2,24 +2,33 @@
 // Created by User on 21.10.2019.
 //
 
+#include <mshtmlc.h>
+
 using namespace std;
 
 class Coder {
 
+    static char const A_UPPER = 'A';
+    static char const A_LOWER = 'a';
+    static char const Z_LOWER = 'z';
+
+    static int const SHIFT_LOWER_TO_UPPER = 0b100000;
+
 public:
-    static string encrypt(string text, string password) {
-        while (text.length() > password.length()) password += password;
+    static string encrypt(const string &text, string &password) {
+        password = getNormalizedPassword(text, password);
+
         int rawEncrText[text.length()];
         string encrText = text;
-        int shift = 0b100000;
         for (int i = 0; i < text.length(); ++i) {
             if (text[i] == ' ') encrText[i] = ' ';
             else {
-                rawEncrText[i] = text[i] + (password[i] - 'A');
-                if (rawEncrText[i] - 'z' > 0) {
-                    encrText[i] = rawEncrText[i] + ('a' - 'z') - shift - 1;
+
+                rawEncrText[i] = text[i] + (password[i] - A_UPPER);
+                if (rawEncrText[i] - Z_LOWER <= 0) {
+                    encrText[i] = rawEncrText[i] - SHIFT_LOWER_TO_UPPER;
                 } else {
-                    encrText[i] = rawEncrText[i] - shift;
+                    encrText[i] = rawEncrText[i] + (A_LOWER - Z_LOWER) - SHIFT_LOWER_TO_UPPER - 1;
                 }
             }
         }
@@ -27,38 +36,66 @@ public:
     }
 
     static string decrypt(string text, string password) {
-        while (text.length() > password.length()) password += password;
-        int rawDecrText[text.length()];
-        string decrText = text;
-        int shift = 0b100000;
+        getNormalizedPassword(text, password);
 
-//        cout << "text = " << text << endl;
-//        cout << "password = " << password << endl;
-        cout << "rawDecrText = " << rawDecrText << endl;
-//        cout << "decrText = " << decrText << endl;
+        int rawText[text.length()];
+        string decrText = text;
+        bool charInRange1 = false;
+        bool charInRange2 = false;
 
         for (int i = 0; i < text.length(); ++i) {
-
-            cout << "i = " << i << endl;
-            cout << "text[i] = " << text[i] << " / " << (int) text[i] << endl;
-            cout << "password[i] = " << password[i] << " / " << (int) password[i] << endl;
-            cout << "'A' = " << 'A' << " / " << (int) 'A' << endl;
-            cout << "(password[i] - 'A') = " << (password[i] - 'A') << (int) (password[i] - 'A') << endl;
-
             if (text[i] == ' ') decrText[i] = ' ';
             else {
-                rawDecrText[i] = text[i] - (password[i] - 'A');
-                if (rawDecrText[i] - 'z' > 0) {
-                    decrText[i] = rawDecrText[i] + ('a' - 'z') - shift - 1;
-                } else {
-                    decrText[i] = rawDecrText[i] - shift;
+                int decrTextCh = 0;
+                charInRange1 = getIsInRange1(text, password, rawText, i, decrTextCh);
+                if ((text[i] - Z_LOWER + SHIFT_LOWER_TO_UPPER <= 0) && charInRange1) {
+                    rawText[i] = text[i] + SHIFT_LOWER_TO_UPPER;
+                    decrText[i] = rawText[i] - (password[i] - A_UPPER);
+//                    decrTextCh = getDecrChar1(text, password, rawText, i);
+
+                }
+
+                charInRange2 = getIsInRange2(text, password, rawText, i, decrTextCh);
+                if ((text[i] - A_LOWER + SHIFT_LOWER_TO_UPPER + 1 > 0) && charInRange2) {
+                    rawText[i] = text[i] - (A_LOWER - Z_LOWER) + SHIFT_LOWER_TO_UPPER + 1;
+                    decrText[i] = rawText[i] - (password[i] - A_UPPER);
+
                 }
             }
-            cout << "rawDecrText[i] = " << rawDecrText[i] << " / " << (int) rawDecrText[i] << endl;
-            cout << "decrText[i] = " << decrText[i] << " / " << (int) decrText[i] << endl;
-            cout << "///////////////////////////////////////////////////////" << endl;
         }
         return decrText;
+    }
+
+    static bool getIsInRange1(const string &text, const string &password, int *rawText, int i, int decrTextCh) {
+        decrTextCh = getDecrChar1(text, password, rawText, i);
+        bool charInRange = (decrTextCh >= A_LOWER && decrTextCh <= Z_LOWER);
+        return charInRange;
+    }
+
+    static bool getIsInRange2(const string &text, const string &password, int *rawText, int i, int decrTextCh) {
+        decrTextCh = getDecrChar2(text, password, rawText, i);
+        bool charInRange = (decrTextCh >= A_LOWER && decrTextCh <= Z_LOWER);
+        return charInRange;
+    }
+
+    static int getDecrChar1(const string &text, const string &password, int *rawText, int i) {
+        rawText[i] = text[i] + SHIFT_LOWER_TO_UPPER;
+        int decrTextCh = rawText[i] - (password[i] - A_UPPER);
+        return decrTextCh;
+    }
+
+    static int getDecrChar2(const string &text, const string &password, int *rawText, int i) {
+        rawText[i] = text[i] - (A_LOWER - Z_LOWER) + SHIFT_LOWER_TO_UPPER + 1;
+        int decrTextCh = rawText[i] - (password[i] - A_UPPER);
+        return decrTextCh;
+    }
+
+    static string &getNormalizedPassword(const string &text, string &password) {
+        while (text.length() > password.length()) password += password;
+        if (password.size() > text.size()) {
+            password = password.substr(0, text.size());
+        }
+        return password;
     }
 };
 
