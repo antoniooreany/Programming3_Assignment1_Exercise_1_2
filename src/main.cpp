@@ -5,8 +5,7 @@ int main() {
 
     string password = "PASSWORT PASSWORT ";
 
-    string textToEncrypt = "zjhhjk vigenere quadrat";
-//    string textToEncrypt = "vigenere quadrat";
+    string textToEncrypt = "vigenere quadrat";
     string encrText = Coder::encrypt(textToEncrypt, password);
     cout << "textToEncrypt = " << textToEncrypt << endl;
     cout << "password = " << password << endl;
@@ -19,6 +18,12 @@ int main() {
     cout << "textToDecrypt = " << textToDecrypt << endl;
     cout << "password = " << password << endl;
     cout << "decrText = " << decrText << endl;
+
+    cout << "///////////////////////////////////////////" << endl;
+
+    string answer;
+    answer = textToEncrypt.compare(decrText) == 0 ? "CORRECT!" : "INCORRECT!";
+    cout << answer << endl;
 
     return 0;
 }
